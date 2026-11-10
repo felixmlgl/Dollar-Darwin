@@ -1,24 +1,44 @@
 # Dollar Darwin
 
-**Evolution on a budget: Muse Ember breeds a Snake-playing program for under one dollar.**
+**Natural selection for code, for under one dollar.**
+
+What if you stopped asking an AI for the right answer, and let evolution find it instead?
+
+Dollar Darwin applies natural selection to programs. Meta's Muse Ember writes a population of programs that play Snake. The browser lets them compete. The weakest die out, the best survive, and Ember breeds the next generation from the survivors. Nobody writes the winning program. It emerges.
 
 Built at the OpenRouter x Meta Build Day (The $1 Challenge).
 
-## What it does
+## Why this needs a cheap model
 
-Instead of asking a large model once, Dollar Darwin asks a small, cheap model about a hundred times and lets the answers compete.
+Evolution is wasteful by design: most offspring are worse than their parents, and progress comes from the few that are not. That only pays off when a single attempt costs almost nothing.
 
-1. Muse Ember writes 10 different `move(state)` functions for a Snake game.
-2. The browser runs every program on 3 fixed boards and scores it. This step uses no model and costs nothing.
-3. The best 2 programs survive.
-4. Muse Ember gets each survivor back, together with its score and the reason it died on each board, and writes improved versions.
-5. Repeat for several generations.
+With an expensive model you ask once and hope. With Muse Ember you can afford to ask a hundred times and keep the best. In our runs a generation of 10 programs cost roughly 3 cents.
 
-The page shows the current champion playing, the score per generation, the champion's source code, and a live counter of what the run has cost so far. The cost is the real amount reported by OpenRouter for each call, not an estimate.
+## The evolutionary loop
+
+| Evolution | In Dollar Darwin |
+| --- | --- |
+| Population | 10 `move(state)` programs per generation, each written by Muse Ember |
+| Environment | A 12x12 Snake board with 8 obstacles |
+| Fitness | Average number of apples eaten across 3 fixed boards |
+| Selection | The best 2 programs survive, including survivors from earlier generations |
+| Mutation | Ember rewrites each survivor, knowing its score and how it died on every board |
+| Variation | Each child gets a different hint, for example "check for dead ends with a flood fill" or "try a clearly different strategy" |
+
+Scoring happens in the browser, uses no model and costs nothing. Only writing and rewriting programs costs money.
+
+## What you see
+
+- The current winner playing Snake
+- The best score per generation, plus one dot for every program Ember wrote
+- The source code of each generation's winner, selectable by generation
+- The number of model calls and the money spent so far. The cost is the real amount OpenRouter reports for each call, not an estimate.
+
+In one recorded run the winner went from 55.7 apples in generation 1 to 78.7 in generation 4.
 
 ## Where Muse Ember and OpenRouter are used
 
-Every program in the population is written by `meta/muse-ember`, called through the OpenRouter chat completions API. There is no other model and no backend. The evolutionary loop, the game, the sandboxed evaluation (Web Workers with a timeout) and the UI are a single HTML file.
+Every program in every generation is written by `meta/muse-ember`, called through the OpenRouter chat completions API. There is no other model and no backend. The loop, the game, the sandboxed evaluation (one Web Worker per program, with a timeout) and the UI are a single HTML file.
 
 ## Run it
 
@@ -29,6 +49,11 @@ Every program in the population is written by `meta/muse-ember`, called through 
 
 The run stops on its own when the budget field (default $1) is reached.
 
-## Game rules given to the model
+## Known limits
 
-12x12 grid, 8 obstacles, the snake dies on walls, obstacles, its own body, or after 200 steps without food. Fitness is the average number of food items eaten across 3 fixed boards.
+- Fitness is measured on the same 3 boards every generation, so programs can overfit to them.
+- With only 2 survivors and 10 children, runs tend to plateau after a few generations. A larger population should go further.
+
+## Beyond Snake
+
+Snake is the part you can watch. The same loop works for anything that can be scored automatically: a function with tests, a prompt with an eval, a query with a runtime.
