@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dollar Darwin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap');
+  :root { --blue:#2a53c7; --slate:#35394a; --text:#1c1c1c; --dim:#5b6278; --accent:#ff7a3d; --green:#53e237; --bad:#d92b2b; }
+  * { box-sizing: border-box; }
+  body { margin:0; color:var(--text); font:700 14px/1.4 Nunito,ui-rounded,system-ui,sans-serif; background-color:var(--blue);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' fill='none' stroke='%231f45b0' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='40' cy='42' r='20'/%3E%3Cpath d='M30 38h1M50 38h1M30 50q10 9 20 0'/%3E%3Cpath d='M120 30l12 28h-24z'/%3E%3Cpath d='M170 60q12-22 24 0t24 0'/%3E%3Cpath d='M30 130h36v30H30zM30 130l18-16 18 16'/%3E%3Cpath d='M120 120l6 14 15 1-12 10 4 15-13-8-13 8 4-15-12-10 15-1z'/%3E%3Cpath d='M170 150q20-30 30 0-10 26-30 0zM200 150l12-10v20z'/%3E%3Cpath d='M70 195q10-14 20 0t20 0'/%3E%3Ccircle cx='150' cy='195' r='9'/%3E%3C/svg%3E"); }
+  header { display:flex; align-items:center; gap:18px; padding:14px 20px 6px; flex-wrap:wrap; }
+  h1 { margin:0; font-size:46px; font-weight:900; letter-spacing:1px; line-height:1; }
+  h1 i { font-style:normal; -webkit-text-stroke:2px #111; paint-order:stroke fill; text-shadow:3px 3px 0 #111; }
+  .tag { color:#fff; font-size:15px; text-shadow:1px 1px 0 rgba(0,0,0,.35); }
+  .controls { display:flex; gap:10px; margin:8px 20px; padding:12px; flex-wrap:wrap; align-items:end; background:var(--slate); border-radius:4px; }
+  label { display:flex; flex-direction:column; gap:3px; font-size:13px; color:#fff; font-weight:800; }
+  input { background:#fff; border:0; color:#111; border-radius:3px; padding:7px 9px; font:600 13px ui-monospace,Menlo,monospace; }
+  input.num { width:70px; }
+  button { background:var(--green); color:#fff; border:0; border-radius:3px; padding:8px 26px; font:900 20px Nunito,sans-serif; text-shadow:2px 2px 0 rgba(0,0,0,.3); cursor:pointer; }
+  button:hover { filter:brightness(1.08); }
+  button.ghost { background:#2c8de7; }
+  button:disabled { opacity:.45; cursor:default; }
+  .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; padding:0 20px; }
+  .stat { background:#fff; border-radius:4px; padding:8px 14px; }
+  .stat b { display:block; font:900 30px/1.1 Nunito,sans-serif; font-variant-numeric:tabular-nums; }
+  .stat small { color:var(--dim); font-size:12px; font-weight:800; }
+  .stat.cost b { color:#ff5a1f; }
+  main { display:grid; grid-template-columns:380px 1fr 1fr; gap:8px; padding:8px 20px 12px; }
+  .panel { background:#fff; border-radius:4px; padding:12px; min-width:0; }
+  .panel h2 { margin:0 0 8px; font-size:15px; font-weight:900; color:#111; }
+  canvas { display:block; width:100%; height:auto; border-radius:3px; background:#fff; border:2px solid #dfe5f3; }
+  #tiles { display:grid; grid-template-columns:repeat(10,1fr); gap:4px; margin-top:10px; }
+  .tile { aspect-ratio:1; border-radius:3px; background:#dfe5f3; display:grid; place-items:center; font:800 12px Nunito,sans-serif; color:var(--dim); }
+  .tile.writing { outline:2px solid var(--accent); color:var(--accent); }
+  .tile.done { color:#111; }
+  .tile.err { background:#ffd6d6; color:var(--bad); }
+  pre { margin:0; font:500 11.5px/1.45 ui-monospace,Menlo,monospace; white-space:pre-wrap; word-break:break-word; max-height:420px; overflow:auto; color:#1c2333; background:#f3f6fc; border-radius:3px; padding:10px; }
+  #log { margin:0 20px 20px; padding:10px 12px; background:#fff; border-radius:4px; color:#333; font:600 12px ui-monospace,Menlo,monospace; white-space:pre-wrap; min-height:38px; }
+  #log .e { color:var(--bad); }
+  #tabs { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+  .tab { font:800 12px Nunito,sans-serif; padding:4px 10px; background:#dfe5f3; color:#111; text-shadow:none; }
+  .tab.on { background:#ff7a3d; color:#fff; }
+  @media (max-width:1000px){ main{grid-template-columns:1fr;} .stats{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<header>
+  <h1><i style="color:#ff3b30">D</i><i style="color:#ff9500">o</i><i style="color:#ffe000">l</i><i style="color:#4cd964">l</i><i style="color:#00e5ff">a</i><i style="color:#3478f6">r</i> <i style="color:#b44dff">D</i><i style="color:#ff6fb5">a</i><i style="color:#ff3b30">r</i><i style="color:#ff9500">w</i><i style="color:#ffe000">i</i><i style="color:#4cd964">n</i><i style="color:#fff">!</i></h1>
+  <div class="tag">Muse Ember writes Snake programs. The browser makes them compete. The best ones breed. All for under a dollar.</div>
+</header>
+
+<div class="controls">
+  <label>OpenRouter API key (never stored)<input id="key" type="password" size="30" placeholder="sk-or-..." autocomplete="off"></label>
+  <label>Model<input id="model" size="24" placeholder="model id on OpenRouter"></label>
+  <label>Population<input id="pop" class="num" type="number" value="10" min="2" max="30"></label>
+  <label>Generations<input id="gens" class="num" type="number" value="8" min="1" max="40"></label>
+  <label>Parallel<input id="conc" class="num" type="number" value="10" min="1" max="30"></label>
+  <label>Budget $<input id="budget" class="num" type="number" value="1" min="0.05" step="0.05"></label>
+  <button id="start">Start evolution</button>
+  <button id="stop" class="ghost" disabled>Stop</button>
+</div>
+
+<div class="stats">
+  <div class="stat"><b id="sGen">0</b><small>Generation</small></div>
+  <div class="stat"><b id="sBest">0</b><small>Best score (avg of 3 games)</small></div>
+  <div class="stat"><b id="sCalls">0</b><small>Muse Ember calls</small></div>
+  <div class="stat"><b id="sTok">0</b><small>Tokens</small></div>
+  <div class="stat cost"><b id="sCost">$0.0000</b><small>Spent via OpenRouter</small></div>
+</div>
+
+<main>
+  <div class="panel">
+    <h2 id="replayTitle">Snake: the current winner plays here</h2>
+    <canvas id="board" width="720" height="720"></canvas>
+    <div id="tiles"></div>
+  </div>
+  <div class="panel">
+    <h2>Apples eaten, per generation</h2>
+    <canvas id="chart" width="900" height="640"></canvas>
+  </div>
+  <div class="panel">
+    <h2 id="codeTitle">Champion code (written by Muse Ember)</h2>
+    <div id="tabs"></div>
+    <pre id="code">// nothing yet. Press start.</pre>
+  </div>
+</main>
+<div id="log"></div>
+
+<script>
+/* ===== SIM START (pure functions, shared by page and worker) ===== */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function placeFood(g){
+  var free=[];
+  for(var y=0;y<g.height;y++)for(var x=0;x<g.width;x++){
+    var k=x+','+y, taken=g.obs[k];
+    if(!taken)for(var i=0;i<g.snake.length;i++){if(g.snake[i].x===x&&g.snake[i].y===y){taken=true;break;}}
+    if(!taken)free.push({x:x,y:y});
+  }
+  g.food=free.length?free[Math.floor(g.rng()*free.length)]:null;
+}
+function newGame(seed){
+  var g={width:12,height:12,rng:mulberry32(seed),snake:[{x:6,y:6},{x:5,y:6},{x:4,y:6}],obstacles:[],obs:{},
+         direction:'right',score:0,steps:0,sinceFood:0,dead:false,reason:''};
+  while(g.obstacles.length<8){
+    var x=Math.floor(g.rng()*12),y=Math.floor(g.rng()*12);
+    if(y>=5&&y<=7)continue; if(g.obs[x+','+y])continue;
+    g.obs[x+','+y]=true; g.obstacles.push({x:x,y:y});
+  }
+  placeFood(g);
+  return g;
+}
+function viewState(g){
+  return {width:g.width,height:g.height,
+    snake:g.snake.map(function(s){return{x:s.x,y:s.y};}),
+    food:g.food?{x:g.food.x,y:g.food.y}:null,
+    obstacles:g.obstacles.map(function(s){return{x:s.x,y:s.y};}),
+    direction:g.direction,score:g.score,stepsSinceFood:g.sinceFood};
+}
+function stepGame(g,dir){
+  var D={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]};
+  if(!D[dir]){g.dead=true;g.reason='invalid move: '+String(dir).slice(0,20);return;}
+  var h=g.snake[0],nx=h.x+D[dir][0],ny=h.y+D[dir][1];
+  g.steps++; g.direction=dir;
+  if(nx<0||ny<0||nx>=g.width||ny>=g.height){g.dead=true;g.reason='hit wall';return;}
+  if(g.obs[nx+','+ny]){g.dead=true;g.reason='hit obstacle';return;}
+  var eat=g.food&&g.food.x===nx&&g.food.y===ny;
+  var lim=eat?g.snake.length:g.snake.length-1;
+  for(var i=0;i<lim;i++){if(g.snake[i].x===nx&&g.snake[i].y===ny){g.dead=true;g.reason='hit own body';return;}}
+  g.snake.unshift({x:nx,y:ny});
+  if(eat){g.score++;g.sinceFood=0;placeFood(g);if(!g.food){g.dead=true;g.reason='board full (perfect game)';return;}}
+  else{g.snake.pop();g.sinceFood++;}
+  if(g.sinceFood>200){g.dead=true;g.reason='starved (200 steps without food)';return;}
+  if(g.steps>=5000){g.dead=true;g.reason='reached 5000 step limit';}
+}
+function evaluate(move,seeds){
+  var out={scores:[],reasons:[],moves:[]};
+  for(var s=0;s<seeds.length;s++){
+    var g=newGame(seeds[s]);
+    while(!g.dead){
+      var d;
+      try{d=move(viewState(g));}catch(e){g.dead=true;g.reason='exception: '+String(e&&e.message||e).slice(0,80);break;}
+      if(s===0)out.moves.push(d);
+      stepGame(g,d);
+    }
+    out.scores.push(g.score);out.reasons.push(g.reason);
+  }
+  return out;
+}
+/* ===== SIM END ===== */
+
+const SEEDS=[11,22,33];
+const WORKER_SRC=[mulberry32,placeFood,newGame,viewState,stepGame,evaluate].map(String).join('\n')+`
+onmessage=function(ev){
+  var move;
+  try{ move=(new Function(ev.data.code+'\\n;return move;'))(); if(typeof move!=='function')throw new Error('move is not a function'); }
+  catch(e){ postMessage({error:'does not compile: '+String(e&&e.message||e).slice(0,100)}); return; }
+  postMessage(evaluate(move,ev.data.seeds));
+};`;
+const WORKER_URL=URL.createObjectURL(new Blob([WORKER_SRC],{type:'text/javascript'}));
+
+function testCode(code){
+  return new Promise(resolve=>{
+    const fail=r=>resolve({fit:0,scores:[0,0,0],reasons:[r,r,r],moves:[]});
+    let w; try{w=new Worker(WORKER_URL);}catch(e){return fail('worker failed: '+e.message);}
+    const t=setTimeout(()=>{w.terminate();fail('timeout (too slow or infinite loop)');},5000);
+    w.onerror=e=>{clearTimeout(t);w.terminate();fail('error: '+(e.message||'unknown'));};
+    w.onmessage=ev=>{clearTimeout(t);w.terminate();
+      if(ev.data.error)return fail(ev.data.error);
+      const sc=ev.data.scores; resolve({fit:sc.reduce((a,b)=>a+b,0)/sc.length,scores:sc,reasons:ev.data.reasons,moves:ev.data.moves});};
+    w.postMessage({code,seeds:SEEDS});
+  });
+}
+
+/* ===== Muse Ember via OpenRouter ===== */
+const $=id=>document.getElementById(id);
+const S={running:false,calls:0,tokens:0,cost:0,gen:0,history:[],parents:[],champ:null,champs:[],kidFits:[],sel:-1};
+
+const RULES=`Snake on a 12x12 grid. Write a JavaScript function move(state) that returns "up", "down", "left" or "right".
+state = {
+  width: 12, height: 12,
+  snake: [{x,y}, ...],      // head first
+  food: {x,y},
+  obstacles: [{x,y}, ...],  // 8 fixed blocked cells
+  direction: "right",       // last move
+  score, stepsSinceFood
+}
+"up" means y-1, "down" means y+1. (0,0) is the top-left corner.
+The snake dies when it hits a wall, an obstacle or its own body, or when it goes 200 steps without eating.
+Each food eaten is 1 point and makes the snake 1 longer. The game is scored on 3 fixed boards; the average is the fitness.
+move() is called once per step and must be fast (the whole evaluation has a 5 second limit).`;
+const SYS='You are an expert programmer taking part in an evolutionary search. Reply with exactly one ```js code block that defines function move(state) (helper functions are allowed in the same block). No prose.';
+const HINTS=[
+  'Fix the most common cause of death first.',
+  'Before committing to a path, check with a flood fill that the snake will not trap itself.',
+  'When there is no safe path to the food, follow your own tail to stay alive until one opens up.',
+  'Try a clearly different strategy from the parent.',
+  'Keep the idea of the parent but make its path search smarter (BFS or A* that treats the tail as free once it has moved).',
+  'Think about the late game, when the snake fills a large part of the board.',
+  'Simplify: remove anything that does not help and make the core logic robust.',
+  'Make sure the function can never return an invalid move or throw.'
+];
+
+function extractCode(text){
+  const m=text.match(/```(?:js|javascript|typescript|ts)?\s*\n([\s\S]*?)```/i);
+  const code=(m?m[1]:text).trim();
+  if(!/move/.test(code))throw new Error('no move() in answer');
+  return code;
+}
+
+async function askEmber(messages){
+  const key=$('key').value.trim(), model=$('model').value.trim();
+  for(let attempt=0;;attempt++){
+    const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json','X-Title':'Dollar Darwin'},
+      body:JSON.stringify(Object.assign({model,messages,temperature:1,max_tokens:20000,usage:{include:true}},S.noReasoningParam?{}:{reasoning:{effort:'low'}}))
+    });
+    if(!res.ok){
+      const body=(await res.text()).slice(0,200);
+      if(res.status===400&&!S.noReasoningParam){S.noReasoningParam=true;continue;}
+      if((res.status===429||res.status>=500)&&attempt<4){await new Promise(r=>setTimeout(r,1500*(attempt+1)+Math.random()*800));continue;}
+      throw new Error('OpenRouter '+res.status+': '+body);
+    }
+    const data=await res.json();
+    if(data.error)throw new Error('OpenRouter: '+(data.error.message||JSON.stringify(data.error)).slice(0,200));
+    S.calls++;
+    if(data.usage){S.tokens+=data.usage.total_tokens||0;S.cost+=Number(data.usage.cost)||0;}
+    renderStats();
+    const ch=data.choices&&data.choices[0];
+    const content=(ch&&ch.message&&ch.message.content)||'';
+    if(!content.trim())throw new Error('empty answer from model (finish_reason: '+(ch&&ch.finish_reason)+')');
+    return content;
+  }
+}
+
+function promptFor(parent,i){
+  if(!parent)return RULES+'\n\nWrite a first version.';
+  const games=parent.scores.map((s,k)=>`board ${k+1}: ${s} points, ended because: ${parent.reasons[k]}`).join('\n');
+  return RULES+`\n\nHere is the current best program. Its average score is ${parent.fit.toFixed(1)}.\n${games}\n\n\`\`\`js\n${parent.code}\n\`\`\`\n\nWrite an improved version that scores higher. ${HINTS[i%HINTS.length]}`;
+}
+
+async function makeChild(parent,i,gen){
+  setTile(i,'writing','…');
+  try{
+    const text=await askEmber([{role:'system',content:SYS},{role:'user',content:promptFor(parent,i)}]);
+    const code=extractCode(text);
+    setTile(i,'writing','▶');
+    const r=await testCode(code);
+    const c={code,gen,...r};
+    setTile(i,'done',r.fit.toFixed(r.fit<10?1:0),r.fit);
+    return c;
+  }catch(e){ setTile(i,'err','×'); log(e.message,true); return null; }
+}
+
+async function runPool(tasks,n){
+  const out=new Array(tasks.length); let next=0;
+  await Promise.all(Array.from({length:Math.min(n,tasks.length)},async()=>{
+    while(next<tasks.length){const k=next++; out[k]=await tasks[k]();}
+  }));
+  return out;
+}
+
+async function run(){
+  if(!$('key').value.trim()||!$('model').value.trim()){log('Enter API key and model id first.',true);return;}
+  try{localStorage.setItem('dd_model',$('model').value.trim());}catch(e){}
+  Object.assign(S,{running:true,calls:0,tokens:0,cost:0,gen:0,history:[],parents:[],champ:null,champs:[],kidFits:[],sel:-1});
+  renderTabs();$('log').textContent=''; $('start').disabled=true; $('stop').disabled=false;
+  const P=+$('pop').value,G=+$('gens').value,C=+$('conc').value,budget=+$('budget').value;
+  buildTiles(P); renderStats(); drawChart();
+  for(let gen=1;gen<=G&&S.running;gen++){
+    if(S.cost>=budget){log('Budget reached. Stopping.');break;}
+    S.gen=gen; renderStats(); buildTiles(P);
+    const tasks=[];
+    for(let i=0;i<P;i++){const parent=S.parents.length?S.parents[i%S.parents.length]:null;tasks.push(()=>makeChild(parent,i,gen));}
+    const kids=(await runPool(tasks,C)).filter(Boolean);
+    if(!kids.length&&!S.parents.length){log('No working program came back. Check model id, key and credits.',true);break;}
+    const all=[...S.parents,...kids].sort((a,b)=>b.fit-a.fit);
+    S.parents=all.slice(0,2);
+    const mean=kids.length?kids.reduce((a,k)=>a+k.fit,0)/kids.length:0;
+    S.history.push({best:S.parents[0].fit,mean});
+    S.champ=S.parents[0];S.champs.push(S.champ);S.kidFits.push(kids.map(k=>k.fit));S.sel=S.champs.length-1;renderTabs();showChamp();
+    renderStats(); drawChart();
+    log(`gen ${gen}: best ${S.parents[0].fit.toFixed(1)}, mean of new ${mean.toFixed(1)}, ${kids.length}/${P} valid, total $${S.cost.toFixed(4)}`);
+  }
+  S.running=false; $('start').disabled=false; $('stop').disabled=true;
+  if(S.champ)log(`Done. Champion scores ${S.champ.fit.toFixed(1)} after ${S.calls} Muse Ember calls for $${S.cost.toFixed(4)}.`);
+}
+
+/* ===== UI ===== */
+function log(msg,err){const d=document.createElement('div');if(err)d.className='e';d.textContent=msg;$('log').prepend(d);}
+function renderStats(){
+  $('sGen').textContent=S.gen; $('sBest').textContent=S.parents[0]?S.parents[0].fit.toFixed(1):'0';
+  $('sCalls').textContent=S.calls; $('sTok').textContent=S.tokens.toLocaleString('en-US'); $('sCost').textContent='$'+S.cost.toFixed(4);
+}
+function buildTiles(n){const t=$('tiles');t.innerHTML='';for(let i=0;i<n;i++){const d=document.createElement('div');d.className='tile';d.id='tile'+i;t.appendChild(d);}}
+function setTile(i,cls,txt,fit){
+  const d=$('tile'+i); if(!d)return; d.className='tile '+cls; d.textContent=txt; d.style.background='';
+  if(cls==='done'){const top=Math.max(10,S.parents[0]?S.parents[0].fit:0,fit);const a=Math.min(1,fit/top);d.style.background=`hsl(${20+a*110} 75% ${35+a*25}%)`;}
+}
+function renderTabs(){
+  const t=$('tabs');t.innerHTML='';
+  S.champs.forEach((c,i)=>{const b=document.createElement('button');b.className='tab'+(i===S.sel?' on':'');
+    b.textContent='Gen '+(i+1)+' · '+c.fit.toFixed(1);b.onclick=()=>{S.sel=i;renderTabs();showChamp();};t.appendChild(b);});
+}
+function showChamp(){
+  const c=S.champs[S.sel]; if(!c)return;
+  $('code').textContent=c.code; $('code').scrollTop=0;
+  $('codeTitle').textContent=`Winner of generation ${S.sel+1} (written by Muse Ember, avg score ${c.fit.toFixed(1)})`;
+  $('replayTitle').textContent=`Snake: winner of generation ${S.sel+1} playing`;
+  startReplay(c.moves);
+}
+
+let replay=null;
+function startReplay(moves){
+  if(replay)clearInterval(replay.timer);
+  const r={g:newGame(SEEDS[0]),i:0,wait:0};
+  r.timer=setInterval(()=>{
+    if(r.g.dead||r.i>=moves.length){ if(++r.wait>40){r.g=newGame(SEEDS[0]);r.i=0;r.wait=0;} }
+    else stepGame(r.g,moves[r.i++]);
+    drawBoard(r.g);
+  },moves.length>600?12:35);
+  replay=r;
+}
+function drawBoard(g){
+  const cv=$('board'),x=cv.getContext('2d'),s=cv.width/12,c=p=>[p.x*s+s/2,p.y*s+s/2];
+  for(let yy=0;yy<12;yy++)for(let xx=0;xx<12;xx++){x.fillStyle=(xx+yy)%2?'#d6eecb':'#e4f6db';x.fillRect(xx*s,yy*s,s,s);}
+  x.fillStyle='#4a4f63';g.obstacles.forEach(o=>rr(x,o.x*s+5,o.y*s+5,s-10,s-10,12));
+  x.fillStyle='#6d7389';g.obstacles.forEach(o=>rr(x,o.x*s+12,o.y*s+11,s*0.3,s*0.16,6));
+  if(g.food){const [fx,fy]=c(g.food);
+    x.fillStyle='#e8352e';x.beginPath();x.arc(fx,fy+3,s*0.3,0,7);x.fill();
+    x.fillStyle='rgba(255,255,255,.55)';x.beginPath();x.arc(fx-6,fy-3,4,0,7);x.fill();
+    x.strokeStyle='#6b3d12';x.lineWidth=4;x.lineCap='round';x.beginPath();x.moveTo(fx,fy-s*0.2);x.lineTo(fx+3,fy-s*0.38);x.stroke();
+    x.fillStyle='#3cab2d';x.beginPath();x.ellipse(fx+11,fy-s*0.33,9,5,-0.5,0,7);x.fill();}
+  const body=(w,col)=>{x.strokeStyle=col;x.lineWidth=w;x.lineCap='round';x.lineJoin='round';x.beginPath();
+    g.snake.forEach((p,i)=>{const [a,b]=c(p);i?x.lineTo(a,b):x.moveTo(a,b);});x.stroke();};
+  body(s*0.8,'#1f7a1f');body(s*0.6,'#4cd137');
+  const [hx,hy]=c(g.snake[0]),D={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[g.direction]||[1,0],P=[-D[1],D[0]];
+  x.fillStyle='#1f7a1f';x.beginPath();x.arc(hx,hy,s*0.45,0,7);x.fill();
+  x.fillStyle='#3fbf2e';x.beginPath();x.arc(hx,hy,s*0.36,0,7);x.fill();
+  [-1,1].forEach(k=>{const ex=hx+D[0]*s*0.12+P[0]*k*s*0.18,ey=hy+D[1]*s*0.12+P[1]*k*s*0.18;
+    x.fillStyle='#fff';x.beginPath();x.arc(ex,ey,s*0.12,0,7);x.fill();
+    x.fillStyle='#111';x.beginPath();x.arc(ex+D[0]*s*0.04,ey+D[1]*s*0.04,s*0.06,0,7);x.fill();});
+  x.fillStyle='rgba(255,255,255,.9)';rr(x,10,10,176,46,12);
+  x.fillStyle='#111';x.font='900 26px Nunito,sans-serif';x.fillText('Apples: '+g.score,24,42);
+  if(g.dead){x.fillStyle='rgba(25,25,35,.85)';rr(x,0,cv.height-56,cv.width,56,0);
+    x.fillStyle='#fff';x.font='800 22px Nunito,sans-serif';x.fillText('Game over: '+g.reason,18,cv.height-21);}
+}
+function rr(x,a,b,w,h,r){x.beginPath();x.roundRect?x.roundRect(a,b,w,h,r):x.rect(a,b,w,h);x.fill();}
+function drawChart(){
+  const cv=$('chart'),x=cv.getContext('2d'),W=cv.width,H=cv.height,L=64,R=44,T=60,B=56;
+  x.fillStyle='#fff';x.fillRect(0,0,W,H);
+  const h=S.history,kf=S.kidFits||[],G=Math.max(+$('gens').value,h.length,2);
+  const top=Math.max(10,...h.map(p=>p.best),...kf.flat())*1.18;
+  const px=i=>L+(W-L-R)*(i/(G-1)),py=v=>H-B-(H-T-B)*(v/top);
+  x.font='700 19px Nunito,sans-serif';x.textAlign='right';
+  for(let k=0;k<=4;k++){const v=top*k/4;x.strokeStyle=k?'#e9edf7':'#aab3cc';x.lineWidth=2;x.beginPath();x.moveTo(L,py(v));x.lineTo(W-R,py(v));x.stroke();
+    x.fillStyle='#7a829a';x.fillText(v.toFixed(0),L-12,py(v)+6);}
+  x.textAlign='center';
+  for(let i=0;i<G;i++)if(G<=12||i%Math.ceil(G/10)===0){x.fillStyle=i<h.length?'#111':'#aab3cc';x.fillText('Gen '+(i+1),px(i),H-20);}
+  kf.forEach((arr,i)=>arr.forEach((v,j)=>{x.fillStyle='rgba(52,120,246,.35)';x.beginPath();x.arc(px(i)+(j-(arr.length-1)/2)*5,py(v),7,0,7);x.fill();}));
+  if(h.length){
+    const gr=x.createLinearGradient(0,T,0,H-B);gr.addColorStop(0,'rgba(255,122,61,.35)');gr.addColorStop(1,'rgba(255,122,61,0)');
+    x.fillStyle=gr;x.beginPath();x.moveTo(px(0),H-B);h.forEach((p,i)=>x.lineTo(px(i),py(p.best)));x.lineTo(px(h.length-1),H-B);x.closePath();x.fill();
+    x.strokeStyle='#ff7a3d';x.lineWidth=6;x.lineJoin='round';x.lineCap='round';x.beginPath();h.forEach((p,i)=>i?x.lineTo(px(i),py(p.best)):x.moveTo(px(i),py(p.best)));x.stroke();
+    h.forEach((p,i)=>{x.fillStyle='#fff';x.strokeStyle='#ff7a3d';x.lineWidth=5;x.beginPath();x.arc(px(i),py(p.best),10,0,7);x.fill();x.stroke();
+      x.fillStyle='#111';x.font='900 22px Nunito,sans-serif';x.fillText(p.best.toFixed(1),px(i),py(p.best)-20);});
+  }
+  x.textAlign='left';x.font='800 18px Nunito,sans-serif';
+  x.fillStyle='#ff7a3d';x.fillText('● best program so far',L,30);
+  x.fillStyle='rgba(52,120,246,.85)';x.fillText('● every program Muse Ember wrote',L+230,30);
+}
+
+$('start').onclick=run;
+$('stop').onclick=()=>{S.running=false;$('stop').disabled=true;log('Stopping after this generation…');};
+try{$('model').value=localStorage.getItem('dd_model')||'';}catch(e){}
+buildTiles(10);drawChart();drawBoard(newGame(SEEDS[0]));
+</script>
+</body>
+</html>
